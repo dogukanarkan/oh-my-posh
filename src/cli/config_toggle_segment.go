@@ -6,6 +6,7 @@ import (
 	"oh-my-posh/color"
 	"oh-my-posh/engine"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -17,6 +18,7 @@ var (
 	parsedConfig   *engine.Config
 	segments       []*engine.Segment
 	segmentTypes   []string
+	listFlag       bool
 )
 
 // toggleSegment represents the toggle segment command
@@ -35,8 +37,12 @@ Example usage:
 	ValidArgs: listSegmentTypes(),
 	Args:      NoArgsOrOneValidArg,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
+		if !cmd.HasFlags() && len(args) == 0 {
 			_ = cmd.Help()
+			return
+		}
+		if listFlag {
+			listSegmentsStatus()
 			return
 		}
 
@@ -46,12 +52,31 @@ Example usage:
 }
 
 func init() { // nolint:gochecknoinits
+	toggleSegmentCmd.Flags().BoolVarP(&listFlag, "list", "l", false, "list segments status")
 	configCmd.AddCommand(toggleSegmentCmd)
 }
 
 func listSegmentTypes() []string {
 	parseConfigFile()
 	return segmentTypes
+}
+
+func listSegmentsStatus() {
+	sortSegments()
+
+	for _, segment := range segments {
+		printColoredSegmentStatus(segment, "->")
+	}
+}
+
+func sortSegments() {
+	sort.Slice(segments, func(i, j int) bool {
+		if segments[i].Enabled != segments[j].Enabled {
+			return segments[i].Enabled && !segments[j].Enabled
+		}
+
+		return segments[i].Type < segments[j].Type
+	})
 }
 
 func parseConfigFile() {
@@ -79,7 +104,7 @@ func toggleSegment(typeName string) {
 	}
 
 	segment.Enabled = !segment.Enabled
-	printStatus(segment)
+	printColoredSegmentStatus(segment, "segment turned")
 }
 
 func findSegmentByTypeName(typeName string) (*engine.Segment, error) {
@@ -101,7 +126,7 @@ func rewriteConfigFile() {
 	ioutil.WriteFile(configFilePath, modifiedConfig, 0644)
 }
 
-func printStatus(segment *engine.Segment) {
+func printColoredSegmentStatus(segment *engine.Segment, message string) {
 	ansiPayload := "\x1b[%sm%s\x1b[0m"
 	ansiColors := color.DefaultColors{}
 	red := ansiColors.AnsiColorFromString("red", false)
@@ -114,5 +139,5 @@ func printStatus(segment *engine.Segment) {
 		status = fmt.Sprintf(ansiPayload, red, "OFF")
 	}
 
-	fmt.Printf("%s segment turned %s.\n", strings.Title(string(segment.Type)), status)
+	fmt.Printf("%s %s %s.\n", strings.Title(string(segment.Type)), message, status)
 }
