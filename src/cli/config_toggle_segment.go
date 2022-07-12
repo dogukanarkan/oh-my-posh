@@ -32,7 +32,7 @@ Example usage:
 > oh-my-posh config toggle aws
 
 > oh-my-posh config toggle spotify`,
-	ValidArgs: segmentTypes,
+	ValidArgs: listSegmentTypes(),
 	Args:      NoArgsOrOneValidArg,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) == 0 {
@@ -40,7 +40,6 @@ Example usage:
 			return
 		}
 
-		parseConfigFile()
 		toggleSegment(args[0])
 		rewriteConfigFile()
 	},
@@ -48,6 +47,11 @@ Example usage:
 
 func init() { // nolint:gochecknoinits
 	configCmd.AddCommand(toggleSegmentCmd)
+}
+
+func listSegmentTypes() []string {
+	parseConfigFile()
+	return segmentTypes
 }
 
 func parseConfigFile() {
@@ -69,14 +73,23 @@ func parseConfigFile() {
 }
 
 func toggleSegment(typeName string) {
+	segment, err := findSegmentByTypeName(typeName)
+	if err != nil {
+		return
+	}
+
+	segment.Enabled = !segment.Enabled
+	printStatus(segment)
+}
+
+func findSegmentByTypeName(typeName string) (*engine.Segment, error) {
 	for _, segment := range segments {
 		if string(segment.Type) == typeName {
-			segment.Enabled = !segment.Enabled
-			printStatus(segment)
-
-			break
+			return segment, nil
 		}
 	}
+
+	return nil, fmt.Errorf("segment %s not found.", typeName)
 }
 
 func rewriteConfigFile() {

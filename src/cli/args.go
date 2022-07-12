@@ -1,6 +1,10 @@
 package cli
 
-import "github.com/spf13/cobra"
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+)
 
 func NoArgsOrOneValidArg(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
@@ -9,5 +13,10 @@ func NoArgsOrOneValidArg(cmd *cobra.Command, args []string) error {
 	if err := cobra.ExactArgs(1)(cmd, args); err != nil {
 		return err
 	}
-	return cobra.OnlyValidArgs(cmd, args)
+	if err := cobra.OnlyValidArgs(cmd, args); err != nil {
+		fmt.Printf("Available segments: %s\n\n", cmd.ValidArgs)
+		return err
+	}
+
+	return nil
 }
