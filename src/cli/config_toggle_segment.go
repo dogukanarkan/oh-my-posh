@@ -12,8 +12,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var (
+	configFilePath = os.Getenv("POSH_THEME")
+	parsedConfig   *engine.Config
+	segments       []*engine.Segment
+	segmentTypes   []string
+)
+
 // toggleSegment represents the toggle segment command
-var toggleSegment = &cobra.Command{
+var toggleSegmentCmd = &cobra.Command{
 	Use:   "toggle",
 	Short: "Enable/disable segment",
 	Long: `Enable/disable segment.
@@ -25,42 +32,60 @@ Example usage:
 > oh-my-posh config toggle aws
 
 > oh-my-posh config toggle spotify`,
-	Args: cobra.ExactArgs(1),
+	ValidArgs: segmentTypes,
+	Args:      NoArgsOrOneValidArg,
 	Run: func(cmd *cobra.Command, args []string) {
-		configFilePath := os.Getenv("POSH_THEME")
-
-		configFile, err := ioutil.ReadFile(configFilePath)
-		if err != nil {
-			fmt.Print(err)
+		if len(args) == 0 {
+			_ = cmd.Help()
+			return
 		}
 
-		var config engine.Config
-		if err := yaml.Unmarshal([]byte(configFile), &config); err != nil {
-			fmt.Print(err)
-		}
-
-		for _, block := range config.Blocks {
-			for _, segment := range block.Segments {
-				if string(segment.Type) == args[0] {
-					segment.Enabled = !segment.Enabled
-					printStatus(segment)
-
-					break
-				}
-			}
-		}
-
-		modifiedConfig, err := yaml.Marshal(config)
-		if err != nil {
-			fmt.Print(err)
-		}
-
-		ioutil.WriteFile(configFilePath, modifiedConfig, 0644)
+		parseConfigFile()
+		toggleSegment(args[0])
+		rewriteConfigFile()
 	},
 }
 
 func init() { // nolint:gochecknoinits
-	configCmd.AddCommand(toggleSegment)
+	configCmd.AddCommand(toggleSegmentCmd)
+}
+
+func parseConfigFile() {
+	configFile, err := ioutil.ReadFile(configFilePath)
+	if err != nil {
+		fmt.Print(err)
+	}
+
+	if err := yaml.Unmarshal([]byte(configFile), &parsedConfig); err != nil {
+		fmt.Print(err)
+	}
+
+	for _, block := range parsedConfig.Blocks {
+		for _, segment := range block.Segments {
+			segments = append(segments, segment)
+			segmentTypes = append(segmentTypes, string(segment.Type))
+		}
+	}
+}
+
+func toggleSegment(typeName string) {
+	for _, segment := range segments {
+		if string(segment.Type) == typeName {
+			segment.Enabled = !segment.Enabled
+			printStatus(segment)
+
+			break
+		}
+	}
+}
+
+func rewriteConfigFile() {
+	modifiedConfig, err := yaml.Marshal(parsedConfig)
+	if err != nil {
+		fmt.Print(err)
+	}
+
+	ioutil.WriteFile(configFilePath, modifiedConfig, 0644)
 }
 
 func printStatus(segment *engine.Segment) {
