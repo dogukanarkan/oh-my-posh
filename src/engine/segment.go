@@ -31,9 +31,9 @@ type Segment struct {
 	TemplatesLogic      template.Logic `json:"templates_logic,omitempty"`
 	Properties          properties.Map `json:"properties,omitempty"`
 	Interactive         bool           `json:"interactive,omitempty"`
+	Enabled             bool           `json:"enabled"`
 
 	writer          SegmentWriter
-	Enabled         bool
 	text            string
 	env             environment.Environment
 	backgroundCache string

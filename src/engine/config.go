@@ -5,6 +5,7 @@ import (
 	json2 "encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"oh-my-posh/color"
 	"oh-my-posh/environment"
 	"oh-my-posh/properties"
@@ -93,6 +94,8 @@ func LoadConfig(env environment.Environment) *Config {
 
 func loadConfig(env environment.Environment) *Config {
 	defer env.Trace(time.Now(), "config.loadConfig")
+	config.ClearAll()
+
 	var cfg Config
 	configFile := env.Flags().Config
 	if _, err := os.Stat(configFile); err != nil {
@@ -126,6 +129,19 @@ func loadConfig(env environment.Environment) *Config {
 	}
 
 	return &cfg
+}
+
+func SyncAndWrite(cfg *Config) {
+	cfg.updated = true
+	cfg.sync()
+
+	buf := new(bytes.Buffer)
+	_, err := config.DumpTo(buf, cfg.format)
+	if err != nil {
+		fmt.Print(err)
+	}
+
+	ioutil.WriteFile(cfg.origin, buf.Bytes(), 0644)
 }
 
 func (cfg *Config) sync() {

@@ -14,7 +14,7 @@ func NoArgsOrOneValidArg(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if err := cobra.OnlyValidArgs(cmd, args); err != nil {
-		fmt.Printf("Available segments: %s\n\n", cmd.ValidArgs)
+		fmt.Printf("Available arguments: %s\n\n", cmd.ValidArgs)
 		return err
 	}
 

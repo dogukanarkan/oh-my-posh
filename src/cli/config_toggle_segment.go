@@ -2,15 +2,14 @@ package cli
 
 import (
 	"fmt"
-	"io/ioutil"
 	"oh-my-posh/color"
 	"oh-my-posh/engine"
+	"oh-my-posh/environment"
 	"os"
 	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -37,7 +36,7 @@ Example usage:
 	ValidArgs: listSegmentTypes(),
 	Args:      NoArgsOrOneValidArg,
 	Run: func(cmd *cobra.Command, args []string) {
-		if !cmd.HasFlags() && len(args) == 0 {
+		if !listFlag && len(args) == 0 {
 			_ = cmd.Help()
 			return
 		}
@@ -47,7 +46,7 @@ Example usage:
 		}
 
 		toggleSegment(args[0])
-		rewriteConfigFile()
+		engine.SyncAndWrite(parsedConfig)
 	},
 }
 
@@ -80,14 +79,13 @@ func sortSegments() {
 }
 
 func parseConfigFile() {
-	configFile, err := ioutil.ReadFile(configFilePath)
-	if err != nil {
-		fmt.Print(err)
+	env := &environment.ShellEnvironment{
+		Version: cliVersion,
 	}
+	env.Init()
+	defer env.Close()
 
-	if err := yaml.Unmarshal([]byte(configFile), &parsedConfig); err != nil {
-		fmt.Print(err)
-	}
+	parsedConfig = engine.LoadConfig(env)
 
 	for _, block := range parsedConfig.Blocks {
 		for _, segment := range block.Segments {
@@ -115,15 +113,6 @@ func findSegmentByTypeName(typeName string) (*engine.Segment, error) {
 	}
 
 	return nil, fmt.Errorf("segment %s not found.", typeName)
-}
-
-func rewriteConfigFile() {
-	modifiedConfig, err := yaml.Marshal(parsedConfig)
-	if err != nil {
-		fmt.Print(err)
-	}
-
-	ioutil.WriteFile(configFilePath, modifiedConfig, 0644)
 }
 
 func printColoredSegmentStatus(segment *engine.Segment, message string) {
