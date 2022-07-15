@@ -10,14 +10,15 @@ import (
 
 // configCmd represents the config command
 var configCmd = &cobra.Command{
-	Use:   "config [export|migrate|edit]",
+	Use:   "config [export|migrate|toggle|edit]",
 	Short: "Interact with the config",
 	Long: `Interact with the config.
 
-You can export, migrate or edit the config.`,
+You can export, migrate or edit the config. Also you can enable/disable segments with toggle command.`,
 	ValidArgs: []string{
 		"export",
 		"migrate",
+		"toggle",
 		"edit",
 		"get",
 	},
