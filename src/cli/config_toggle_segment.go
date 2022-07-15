@@ -5,7 +5,6 @@ import (
 	"oh-my-posh/color"
 	"oh-my-posh/engine"
 	"oh-my-posh/environment"
-	"os"
 	"sort"
 	"strings"
 
@@ -13,11 +12,11 @@ import (
 )
 
 var (
-	configFilePath = os.Getenv("POSH_THEME")
-	parsedConfig   *engine.Config
-	segments       []*engine.Segment
-	segmentTypes   []string
-	listFlag       bool
+	parsedConfig *engine.Config
+	segments     []*engine.Segment
+	segmentTypes []string
+	listFlag     bool
+	orderFlag    bool
 )
 
 // toggleSegment represents the toggle segment command
@@ -52,6 +51,7 @@ Example usage:
 
 func init() { // nolint:gochecknoinits
 	toggleSegmentCmd.Flags().BoolVarP(&listFlag, "list", "l", false, "list segments status")
+	toggleSegmentCmd.Flags().BoolVarP(&orderFlag, "order", "o", false, "order segments by status and name")
 	configCmd.AddCommand(toggleSegmentCmd)
 }
 
@@ -61,7 +61,9 @@ func listSegmentTypes() []string {
 }
 
 func listSegmentsStatus() {
-	sortSegments()
+	if orderFlag {
+		sortSegments()
+	}
 
 	for _, segment := range segments {
 		printColoredSegmentStatus(segment, "->")
