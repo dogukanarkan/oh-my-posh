@@ -136,6 +136,8 @@ const (
 	NPM SegmentType = "npm"
 	// NX writes which Nx version us currently active
 	NX SegmentType = "nx"
+	// OCI writes the active OCI context
+	OCI SegmentType = "oci"
 	// OS write os specific icon
 	OS SegmentType = "os"
 	// OWM writes the weather coming from openweatherdata
@@ -291,6 +293,7 @@ func (segment *Segment) mapSegmentWithWriter(env environment.Environment) error 
 		NODE:          &segments.Node{},
 		NPM:           &segments.Npm{},
 		NX:            &segments.Nx{},
+		OCI:           &segments.Oci{},
 		OS:            &segments.Os{},
 		OWM:           &segments.Owm{},
 		PATH:          &segments.Path{},
